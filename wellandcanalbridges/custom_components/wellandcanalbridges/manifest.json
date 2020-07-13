@@ -1,0 +1,9 @@
+{
+  "codeowners": ["djtimca"],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/djtimca/hawellandcanalbridges",
+  "domain": "wellandcanalbridges",
+  "name": "Welland Canal Bridge Status",
+  "requirements": []
+}
