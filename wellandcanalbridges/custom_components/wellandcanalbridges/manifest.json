@@ -1,9 +1,16 @@
 {
-  "codeowners": ["djtimca"],
-  "config_flow": true,
-  "dependencies": [],
-  "documentation": "https://github.com/djtimca/hawellandcanalbridges",
   "domain": "wellandcanalbridges",
   "name": "Welland Canal Bridge Status",
-  "requirements": []
+  "config_flow": false,
+  "documentation": "https://github.com/djtimca/hawellandcanalbridges",
+  "requirements": [
+    "wellancanalbridges==0.1.0"
+  ],
+  "ssdp": [],
+  "zeroconf": [],
+  "homekit": {},
+  "dependencies": [],
+  "codeowners": [
+    "@djtimca"
+  ]
 }
