@@ -1,6 +1,6 @@
 # Home Assistant Custom Component for the Welland Canal Bridges in the Niagara Region of Ontario Canada
 
-<a class="bmc-button" target="_blank" href="https://www.buymeacoffee.com/djtimca"><img src="https://cdn.buymeacoffee.com/buttons/bmc-new-btn-logo.svg" alt="Buy me a coffee" style="height: 41px !important;width: 174px !important;box-shadow: 0px 3px 2px 0px rgba(190, 190, 190, 0.5) !important;-webkit-box-shadow: 0px 3px 2px 0px rgba(190, 190, 190, 0.5) !important;">Buy me a coffee</a>
+<a target="_blank" href="https://www.buymeacoffee.com/djtimca"><img src="https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png" alt="Buy me a coffee" style="height: 41px !important;width: 174px !important;box-shadow: 0px 3px 2px 0px rgba(190, 190, 190, 0.5) !important;-webkit-box-shadow: 0px 3px 2px 0px rgba(190, 190, 190, 0.5) !important;"></a>
 
 The status of each of the bridges on the Welland Canal will be reported as new sensors within Home Assistant which can then be used for alerts and status reporting for those who either live near a bridge or who travel across the canal on a regular basis.
 
