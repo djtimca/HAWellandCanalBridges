@@ -1,0 +1,8 @@
+{
+    "name": "Welland Canal Bridge Status",
+    "render_readme": true,
+    "country": "CA",
+    "domains": "binary_sensor",
+    "homeassistant": "0.111.0",
+    "iot_class": ["Cloud Polling"]
+}
