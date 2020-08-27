@@ -1,0 +1,14 @@
+{
+    "config": {
+        "abort": {
+            "no_devices_found": "Couldn't find any bridge data.",
+            "single_instance_allowed": "Only one instance of the Welland Canal Bridge integration is allowed."
+        },
+        "step": {
+            "confirm": {
+                "description": "Are you sure you want to set up the bridge status integration?"
+            }
+        }
+    },
+    "title": "Welland Canal Bridge Status"
+}

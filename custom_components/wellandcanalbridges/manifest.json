@@ -1,8 +1,16 @@
 {
   "domain": "wellandcanalbridges",
   "name": "Welland Canal Bridge Status",
-  "documentation": "https://github.com/djtimca/hawellandcanalbridges",
+  "config_flow": true,
+  "documentation": "https://www.home-assistant.io/integrations/wellandcanalbridges",
+  "requirements": [
+    "wellandcanalbridges==0.1.2"
+  ],
+  "ssdp": [],
+  "zeroconf": [],
+  "homekit": {},
   "dependencies": [],
-  "codeowners": ["@djtimca"],
-  "requirements": ["wellandcanalbridges==0.1.0"]
+  "codeowners": [
+    "@djtimca"
+  ]
 }
