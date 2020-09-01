@@ -84,16 +84,6 @@ class WellandCanalBridge(BinarySensorEntity):
         """Return the state."""
         return self._state
 
-    @property
-    def device_info(self):
-        """Define the device for the entity registry."""
-        return {
-            "identifiers": {DOMAIN, "wellandcanalniagara"},
-            "name": "Welland Canal Bridges",
-            "manufacturer": "St. Lawrence Seaway",
-            "model": "Welland Canal",
-        }
-
     def bridge_state(self, status_type):
         return status_type == 1
 
