@@ -4,6 +4,14 @@
 
 The status of each of the bridges on the Welland Canal will be reported as new sensors within Home Assistant which can then be used for alerts and status reporting for those who either live near a bridge or who travel across the canal on a regular basis.
 
+Bridge status is available through either:
+
+### binary_sensor
+The binary sensor for each bridge will report only open or closed for each bridge. If a bridge is raising soon or under construction, it will report as closed to help you avoid getting backed up. This is the simplest on/off way to see the bridges.
+
+### sensor
+The sensor implementation for each bridge will report the actual status from the Seaway which may include Available, Raising Soon, Fully Raised, and several others statuses. To simplify integration for Lovelace templates, there is an additional attribute on the sensor which will report the equivalent binary_sensor behaviour (available = true/false)
+
 ## Usage
 
 ### Install through HACS:
