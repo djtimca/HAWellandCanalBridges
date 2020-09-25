@@ -1,7 +1,6 @@
 """Definition and setup of the Welland Canal Bridges Sensors for Home Assistant."""
 
 import logging
-import json
 
 from datetime import timedelta
 
@@ -28,13 +27,10 @@ async def async_setup_entry(hass, entry, async_add_entities, discovery_info=None
     coordinator = hass.data[DOMAIN][entry.entry_id][COORDINATOR]
     bridges = []
     
-    coordinator_data = json.loads(str(coordinator.data))
-    bridge_list = coordinator_data.get("bridges")
-
-    for bridge in bridge_list:
-        bridges.append(WellandCanalBridge(coordinator, bridge))
+    for bridge_id, bridge in coordinator.data.items():
+        bridges.append(WellandCanalBridge(coordinator, bridge, bridge_id))
     
-    async_add_entities(bridges, update_before_add=True)
+    async_add_entities(bridges)
 
 class WellandCanalBridge(CoordinatorEntity):
     """Defines a Welland Canal Bridge sensor."""
@@ -43,23 +39,22 @@ class WellandCanalBridge(CoordinatorEntity):
         self, 
         coordinator: WellandCanalBridgeUpdater, 
         bridge: dict, 
+        bridge_id: str
         ):
         """Initialize Entities."""
 
         super().__init__(coordinator=coordinator)
 
-        bridgename = bridge.get("name") + " - " + bridge.get("location")
-        if bridge.get("nickname") != "":
-            bridgename = bridgename + " (" + bridge.get("nickname") + ")"
+        bridgename = f"{bridge['name']} - {bridge['location']}"
+        if bridge["nickname"] != "":
+            bridgename = f"{bridgename} ({bridge['nickname']})"
         
         self._name = bridgename
-        self._unique_id = ENTITY_ID_FORMAT.format("wellandcanalbridge_" + str(bridge.get("id")))
-        self._state = self.bridge_state(int(bridge["status"].get("status_type")))
-        self._device_class = "door"
+        self._unique_id = f"wellandcanalbridge_{bridge_id}"
+        self._state = bridge["status"]["status"]
         self._icon = "mdi:bridge"
-        self._id = str(bridge.get("id"))
-        self.attrs = {}
-        self.attrs["bridge_id"] = str(bridge.get("id"))
+        self._bridge_id = bridge_id
+        self._attrs = {}
 
     @property
     def unique_id(self):
@@ -79,15 +74,10 @@ class WellandCanalBridge(CoordinatorEntity):
     @property
     def device_state_attributes(self):
         """Return the attributes."""
-        coordinator_data = json.loads(str(self.coordinator.data))
-        bridge_list = coordinator_data.get("bridges")
+        self._attrs["last_updated"] = self.coordinator.data[self._bridge_id]["status"]["updated_at"]
+        self._attrs["available"] = (self.coordinator.data[self._bridge_id]["status"]["status_type"] == 1)
 
-        for bridge in bridge_list:
-            if str(bridge.get("id")) == str(self._id):
-                self.attrs["last_updated"] = bridge["status"].get("updated_at")
-                self.attrs["available"] = self.bridge_state(int(bridge["status"].get("status_type")))
-
-        return self.attrs
+        return self._attrs
 
     @property
     def device_info(self):
@@ -106,17 +96,8 @@ class WellandCanalBridge(CoordinatorEntity):
     @property
     def state(self):
         """Return the state."""
-        coordinator_data = json.loads(str(self.coordinator.data))
-        bridge_list = coordinator_data.get("bridges")
-
-        for bridge in bridge_list:
-            if str(bridge.get("id")) == str(self._id):
-                self._state = bridge["status"].get("status")
-
-        return self._state
-
-    def bridge_state(self, status_type):
-        return status_type == 1
+        
+        return self.coordinator.data[self._bridge_id]["status"]["status"]
 
     async def async_update(self):
         """Update Welland Canal Bridge Entity."""

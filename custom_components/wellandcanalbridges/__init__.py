@@ -1,5 +1,6 @@
 """The Welland Canal Bridge Status integration."""
 import asyncio
+import json
 
 import voluptuous as vol
 import logging
@@ -114,4 +115,10 @@ class WellandCanalBridgeUpdater(DataUpdateCoordinator):
             _LOGGER.info("Welland Canal API: %s", error)
             raise ConfigEntryNotReady from error
 
-        return bridge_data
+        bridge_data = json.loads(bridge_data)
+        bridges = {}
+
+        for bridge in bridge_data["bridges"]:
+            bridges[bridge["id"]] = bridge
+
+        return bridges
