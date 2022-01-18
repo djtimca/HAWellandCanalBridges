@@ -72,7 +72,7 @@ class WellandCanalBridge(CoordinatorEntity):
         return self._icon
 
     @property
-    def device_state_attributes(self):
+    def extra_state_attributes(self):
         """Return the attributes."""
         self._attrs["last_updated"] = self.coordinator.data[self._bridge_id]["status"]["updated_at"]
         self._attrs["available"] = (self.coordinator.data[self._bridge_id]["status"]["status_type"] == 1)
