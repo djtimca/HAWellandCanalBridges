@@ -16,5 +16,5 @@ async def _async_has_devices(hass) -> bool:
 
 
 config_entry_flow.register_discovery_flow(
-    DOMAIN, "Welland Canal Bridge Status", _async_has_devices, config_entries.CONN_CLASS_UNKNOWN
+    DOMAIN, "Welland Canal Bridge Status", _async_has_devices
 )
