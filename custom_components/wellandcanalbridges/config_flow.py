@@ -9,10 +9,10 @@ from .const import DOMAIN
 
 async def _async_has_devices(hass) -> bool:
     """Return if there are devices that can be discovered."""
-    # TODO Check if there are any devices that can be discovered in the network.
+
     api = WellandCanalBridges()
-    devices = await api.get_bridge_status()
-    return len(devices) > 0
+    bridge_data = await api.get_bridge_status()
+    return bool(bridge_data.get("bridges"))
 
 
 config_entry_flow.register_discovery_flow(

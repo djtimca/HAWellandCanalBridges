@@ -1,12 +1,12 @@
 """The Welland Canal Bridge Status integration."""
-import asyncio
-import json
-
 import voluptuous as vol
 import logging
 
 from datetime import timedelta
+from typing import Any
+
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.exceptions import ConfigEntryNotReady, PlatformNotReady
@@ -17,15 +17,15 @@ from .const import DOMAIN, COORDINATOR, CANAL_API
 CONFIG_SCHEMA = vol.Schema({DOMAIN: vol.Schema({})}, extra=vol.ALLOW_EXTRA)
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS = ["binary_sensor", "sensor"]
+PLATFORMS: list[Platform] = [Platform.BINARY_SENSOR, Platform.SENSOR]
 
-async def async_setup(hass: HomeAssistant, config: dict):
+async def async_setup(hass: HomeAssistant, config: dict[str, Any]):
     """Set up the Welland Canal Bridge Status component."""
     hass.data.setdefault(DOMAIN, {})
 
     return True
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Welland Canal Bridge Status from a config entry."""
     polling_interval = 5
     api = WellandCanalBridges()
@@ -63,16 +63,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     return True
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
-    unload_ok = all(
-        await asyncio.gather(
-            *[
-                hass.config_entries.async_forward_entry_unload(entry, component)
-                for component in PLATFORMS
-            ]
-        )
-    )
+    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
         hass.data[DOMAIN].pop(entry.entry_id)
 
@@ -84,7 +77,7 @@ class WellandCanalBridgeUpdater(DataUpdateCoordinator):
     def __init__(
         self,
         hass: HomeAssistant,
-        api: str,
+        api: WellandCanalBridges,
         name: str,
         polling_interval: int,
     ):
@@ -111,10 +104,9 @@ class WellandCanalBridgeUpdater(DataUpdateCoordinator):
             _LOGGER.info("Welland Canal API: %s", error)
             raise ConfigEntryNotReady from error
 
-        bridge_data = json.loads(bridge_data)
         bridges = {}
 
-        for bridge in bridge_data["bridges"]:
+        for bridge in bridge_data.get("bridges", []):
             bridges[bridge["id"]] = bridge
 
         return bridges

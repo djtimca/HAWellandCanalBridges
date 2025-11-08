@@ -1,86 +1,98 @@
 """Definition and setup of the Welland Canal Bridges Sensors for Home Assistant."""
 
-import logging
+from __future__ import annotations
 
-from datetime import timedelta
+from typing import Any, TYPE_CHECKING
 
-from homeassistant.components.sensor import ENTITY_ID_FORMAT
+from homeassistant.components.sensor import SensorEntity
 from homeassistant.const import ATTR_NAME
-import homeassistant.helpers.config_validation as cv
-import homeassistant.util.dt as dt_util
-from homeassistant.helpers.entity import Entity
-from homeassistant.helpers.update_coordinator import (
-    CoordinatorEntity,
-    DataUpdateCoordinator,
-    UpdateFailed,
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
+
+from .const import (
+    ATTR_IDENTIFIERS,
+    ATTR_MANUFACTURER,
+    ATTR_MODEL,
+    COORDINATOR,
+    DOMAIN,
 )
 
-from . import WellandCanalBridgeUpdater
-
-from .const import COORDINATOR, DOMAIN, ATTR_IDENTIFIERS, ATTR_MANUFACTURER, ATTR_MODEL
-
-_LOGGER = logging.getLogger(__name__)
+if TYPE_CHECKING:
+    from . import WellandCanalBridgeUpdater
 
 async def async_setup_entry(hass, entry, async_add_entities, discovery_info=None):
     """Set up the sensor platforms."""
 
-    coordinator = hass.data[DOMAIN][entry.entry_id][COORDINATOR]
-    bridges = []
-    
-    for bridge_id, bridge in coordinator.data.items():
-        bridges.append(WellandCanalBridge(coordinator, bridge, bridge_id))
-    
-    async_add_entities(bridges)
+    coordinator: WellandCanalBridgeUpdater = hass.data[DOMAIN][entry.entry_id][
+        COORDINATOR
+    ]
 
-class WellandCanalBridge(CoordinatorEntity):
+    entities = [
+        WellandCanalBridge(coordinator, bridge, bridge_id)
+        for bridge_id, bridge in coordinator.data.items()
+    ]
+
+    async_add_entities(entities, update_before_add=True)
+
+
+class WellandCanalBridge(CoordinatorEntity, SensorEntity):
     """Defines a Welland Canal Bridge sensor."""
 
+    _attr_icon = "mdi:bridge"
+
     def __init__(
-        self, 
-        coordinator: WellandCanalBridgeUpdater, 
-        bridge: dict, 
-        bridge_id: str
-        ):
-        """Initialize Entities."""
+        self,
+        coordinator: WellandCanalBridgeUpdater,
+        bridge: dict[str, Any],
+        bridge_id: str,
+    ) -> None:
+        """Initialize the bridge sensor entity."""
 
-        super().__init__(coordinator=coordinator)
-
-        bridgename = f"{bridge['name']} - {bridge['location']}"
-        if bridge["nickname"] != "":
-            bridgename = f"{bridgename} ({bridge['nickname']})"
-        
-        self._name = bridgename
-        self._unique_id = f"wellandcanalbridge_{bridge_id}"
-        self._state = bridge["status"]["status"]
-        self._icon = "mdi:bridge"
+        super().__init__(coordinator)
         self._bridge_id = bridge_id
-        self._attrs = {}
+
+        name = bridge.get("name", bridge_id)
+        nickname = bridge.get("nickname")
+        if nickname:
+            name = f"{name} ({nickname})"
+
+        self._attr_name = f"{name} Status"
+        self._attr_unique_id = f"wellandcanalbridge_{bridge_id}_status"
 
     @property
-    def unique_id(self):
-        """Return the unique Home Assistant friendly identifier for this entity."""
-        return self._unique_id
+    def available(self) -> bool:
+        """Return whether the entity is available."""
+
+        bridge = self.coordinator.data.get(self._bridge_id)
+        if not bridge:
+            return False
+        status_code = bridge.get("status_code")
+        return status_code is not None and status_code != 4
 
     @property
-    def name(self):
-        """Return the friendly name of this entity."""
-        return self._name
+    def native_value(self) -> str | None:
+        """Return the current bridge status string."""
+
+        bridge = self.coordinator.data.get(self._bridge_id, {})
+        return bridge.get("status")
 
     @property
-    def icon(self):
-        """Return the icon for this entity."""
-        return self._icon
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Return additional state attributes."""
+
+        bridge = self.coordinator.data.get(self._bridge_id, {})
+
+        attrs: dict[str, Any] = {}
+        if bridge.get("status_code") is not None:
+            attrs["status_code"] = bridge["status_code"]
+        if bridge.get("last_updated") is not None:
+            attrs["last_updated"] = bridge["last_updated"]
+        if bridge.get("nickname"):
+            attrs["nickname"] = bridge["nickname"]
+
+        return attrs
 
     @property
-    def extra_state_attributes(self):
-        """Return the attributes."""
-        self._attrs["last_updated"] = self.coordinator.data[self._bridge_id]["status"]["updated_at"]
-        self._attrs["available"] = (self.coordinator.data[self._bridge_id]["status"]["status_type"] == 1)
-
-        return self._attrs
-
-    @property
-    def device_info(self):
+    def device_info(self) -> dict[str, Any]:
         """Define the device based on device_identifier."""
 
         device_name = "Welland Canal Bridges"
@@ -93,19 +105,4 @@ class WellandCanalBridge(CoordinatorEntity):
             ATTR_MODEL: device_model,
         }
 
-    @property
-    def state(self):
-        """Return the state."""
-        
-        return self.coordinator.data[self._bridge_id]["status"]["status"]
-
-    async def async_update(self):
-        """Update Welland Canal Bridge Entity."""
-        await self.coordinator.async_request_refresh()
-                
-    async def async_added_to_hass(self):
-        """Subscribe to updates."""
-        self.async_on_remove(
-            self.coordinator.async_add_listener(self.async_write_ha_state)
-        )
 

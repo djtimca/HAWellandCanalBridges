@@ -1,83 +1,82 @@
 """Definition and setup of the Welland Canal Bridges Sensors for Home Assistant."""
 
-import logging
+from __future__ import annotations
 
-from datetime import timedelta
+from typing import Any, TYPE_CHECKING
 
-from homeassistant.components.sensor import ENTITY_ID_FORMAT
-from homeassistant.components.binary_sensor import BinarySensorEntity
+from homeassistant.components.binary_sensor import (
+    BinarySensorDeviceClass,
+    BinarySensorEntity,
+)
 from homeassistant.const import ATTR_NAME
-import homeassistant.helpers.config_validation as cv
-import homeassistant.util.dt as dt_util
-from homeassistant.helpers.entity import Entity
-from . import WellandCanalBridgeUpdater
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import COORDINATOR, DOMAIN, ATTR_IDENTIFIERS, ATTR_MANUFACTURER, ATTR_MODEL
+from .const import (
+    ATTR_IDENTIFIERS,
+    ATTR_MANUFACTURER,
+    ATTR_MODEL,
+    COORDINATOR,
+    DOMAIN,
+)
 
-_LOGGER = logging.getLogger(__name__)
+if TYPE_CHECKING:
+    from . import WellandCanalBridgeUpdater
 
 async def async_setup_entry(hass, entry, async_add_entities, discovery_info=None):
     """Set up the binary sensor platforms."""
 
-    coordinator = hass.data[DOMAIN][entry.entry_id][COORDINATOR]
-    bridges = []
-    
-    for bridge_id, bridge in coordinator.data.items():
-        bridges.append(WellandCanalBridge(coordinator, bridge, bridge_id))
-    
-    async_add_entities(bridges)
+    coordinator: WellandCanalBridgeUpdater = hass.data[DOMAIN][entry.entry_id][
+        COORDINATOR
+    ]
 
-class WellandCanalBridge(BinarySensorEntity):
-    """Defines a Welland Canal Bridge sensor."""
+    entities = [
+        WellandCanalBridge(coordinator, bridge, bridge_id)
+        for bridge_id, bridge in coordinator.data.items()
+    ]
 
-    def __init__(self, coordinator, bridge, bridge_id):
-        """Initialize Entities."""
+    async_add_entities(entities, update_before_add=True)
 
-        bridgename = f"{bridge['name']} - {bridge['location']}"
-        
-        if bridge["nickname"] != "":
-            bridgename = f"{bridgename} ({bridge['nickname']}"
-        
-        self._name = bridgename
-        self._unique_id = f"wellandcanalbridge_{str(bridge['id'])}"
-        self._state = (bridge["status"]["status_type"] == 1)
+
+class WellandCanalBridge(CoordinatorEntity, BinarySensorEntity):
+    """Defines a Welland Canal Bridge binary sensor."""
+
+    _attr_device_class = BinarySensorDeviceClass.DOOR
+    _attr_icon = "mdi:bridge"
+
+    def __init__(
+        self,
+        coordinator: WellandCanalBridgeUpdater,
+        bridge: dict[str, Any],
+        bridge_id: str,
+    ) -> None:
+        """Initialize the bridge entity."""
+
+        super().__init__(coordinator)
         self._bridge_id = bridge_id
-        self.coordinator = coordinator
-        self._device_class = "door"
-        self._icon = "mdi:bridge"
-        self._attrs = {}
-        
-    @property
-    def should_poll(self):
-        """Return the polling requirement of an entity."""
-        return False
+
+        name = bridge.get("name", bridge_id)
+        nickname = bridge.get("nickname")
+        if nickname:
+            name = f"{name} ({nickname})"
+
+        self._attr_name = name
+        self._attr_unique_id = f"wellandcanalbridge_{bridge_id}"
 
     @property
-    def unique_id(self):
-        """Return the unique Home Assistant friendly identifier for this entity."""
-        return self._unique_id
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Return the dynamic entity attributes."""
 
-    @property
-    def name(self):
-        """Return the friendly name of this entity."""
-        return self._name
+        bridge = self.coordinator.data.get(self._bridge_id, {})
 
-    @property
-    def device_class(self):
-        """Return the device class for this entity."""
-        return self._device_class
+        attrs: dict[str, Any] = {}
+        if bridge.get("status") is not None:
+            attrs["status"] = bridge["status"]
+        if bridge.get("status_code") is not None:
+            attrs["status_code"] = bridge["status_code"]
+        if bridge.get("last_updated") is not None:
+            attrs["last_updated"] = bridge["last_updated"]
 
-    @property
-    def icon(self):
-        """Return the icon for this entity."""
-        return self._icon
-
-    @property
-    def extra_state_attributes(self):
-        """Return the attributes."""
-        self._attrs["last_updated"] = self.coordinator.data[self._bridge_id]["status"]["updated_at"]
-
-        return self._attrs
+        return attrs
 
     @property
     def device_info(self):
@@ -96,15 +95,6 @@ class WellandCanalBridge(BinarySensorEntity):
     @property
     def is_on(self) -> bool:
         """Return the state."""
-        state = int(self.coordinator.data[self._bridge_id]["status"]["status_type"]) == 1
-        return state
-
-    async def async_update(self):
-        """Update Welland Canal Bridge Entity."""
-        await self.coordinator.async_request_refresh()
-                
-    async def async_added_to_hass(self):
-        """Subscribe to updates."""
-        self.async_on_remove(
-            self.coordinator.async_add_listener(self.async_write_ha_state)
-        )
+        bridge = self.coordinator.data.get(self._bridge_id, {})
+        status_code = bridge.get("status_code")
+        return status_code in (1, 2)
